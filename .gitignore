@@ -5,10 +5,15 @@
 *_token
 *.tsauthkey
 
+# ── Stateful-состояние (бэкапится отдельно, не в IaC) ──
 vps/caddy/data/        # сертификаты Let's Encrypt, ACME-аккаунт
 vps/caddy/config/
 vps/amnezia/           # ключи и конфиги пиров
 
+# ── Сгенерённые из шаблонов конфиги (форма — в git, значения — нет) ──
+vps/Caddyfile
+
+# ── Мусор ОС/редактора ──
 .DS_Store
 *.swp
 .idea/
