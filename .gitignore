@@ -1,0 +1,15 @@
+.env
+*.key
+*.pem
+*_key
+*_token
+*.tsauthkey
+
+vps/caddy/data/        # сертификаты Let's Encrypt, ACME-аккаунт
+vps/caddy/config/
+vps/amnezia/           # ключи и конфиги пиров
+
+.DS_Store
+*.swp
+.idea/
+.vscode/
