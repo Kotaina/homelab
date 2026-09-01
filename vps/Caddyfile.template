@@ -3,6 +3,6 @@
 }
 
 # Phase 1 (make-or-break): только n8n. Остальные сабдомены — Phase 2, после валидации.
-n8n.${BASE_DOMAIN} {
+n8n.${BASE_DOMAIN}:8444 {
 	reverse_proxy ${NAS_TAILSCALE_IP}:5678
 }
