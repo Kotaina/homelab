@@ -6,3 +6,9 @@
 n8n.${BASE_DOMAIN}:8444 {
 	reverse_proxy ${NAS_TAILSCALE_IP}:5678
 }
+
+files.${BASE_DOMAIN}:8444 {
+	reverse_proxy ${NAS_TAILSCALE_IP}:5000 {
+		header_down -X-Frame-Options
+	}
+}
