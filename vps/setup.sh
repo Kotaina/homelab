@@ -46,6 +46,11 @@ envsubst '${BASE_DOMAIN} ${ACME_EMAIL} ${NAS_TAILSCALE_IP}' \
 
 # ── 3. Caddy ──
 echo "→ поднимаю Caddy…"
-docker compose -f "${SCRIPT_DIR}/docker-compose.yml" up -d
+${COMPOSE} -f "${SCRIPT_DIR}/docker-compose.yml" up -d
 
-echo "✓ Готово. Проверь https://n8n.${BASE_DOMAIN}"
+# Caddy не перечитывает конфиг сам, если compose не пересоздал контейнер
+# (менялся только примонтированный Caddyfile). Форсим reload явно.
+echo "→ перечитываю конфиг Caddy…"
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+echo "✓ Готово. Проверь https://${BASE_DOMAIN}:8444"
