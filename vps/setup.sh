@@ -26,6 +26,17 @@ set -a; source "${ENV_FILE}"; set +a
 command -v docker   >/dev/null || { echo "нужен docker" >&2; exit 1; }
 command -v envsubst >/dev/null || { echo "нужен gettext-base: apt install gettext-base" >&2; exit 1; }
 
+# --- Определяем доступную команду Compose (V2 плагин или V1 бинарь) ---
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE="docker-compose"
+else
+  echo "нужен Docker Compose (плагин v2 или docker-compose v1)" >&2
+  exit 1
+fi
+echo "✓ Compose: ${COMPOSE}"
+
 # ── 1. Tailscale (на хосте, не в контейнере) ──
 if ! command -v tailscale >/dev/null 2>&1; then
   echo "→ ставлю Tailscale…"
