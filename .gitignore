@@ -1,4 +1,4 @@
-.env
+vps/.env
 *.key
 *.pem
 *_key
