@@ -1,0 +1,15 @@
+[Unit]
+Description=Restrict tinyproxy port to trusted sources (homelab IaC)
+# WHY: firewall rules live in the kernel and are wiped on reboot. This unit
+# re-applies only our :8888 rules at boot. After docker so DOCKER-USER and
+# container rules already exist; Tailscale restores its own rules separately.
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/homelab/vps/tinyproxy-firewall.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

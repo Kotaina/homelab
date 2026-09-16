@@ -21,6 +21,8 @@ set -a; source "${ENV_FILE}"; set +a
 : "${ACME_EMAIL:?задай в .env}"
 : "${NAS_TAILSCALE_IP:?задай в .env}"
 : "${TS_AUTHKEY:?задай в .env}"
+: "${NAS_PUBLIC_IP:?задай в .env}"
+: "${TINYPROXY_PORT:?задай в .env}"
 
 # --- Зависимости хоста ---
 command -v docker   >/dev/null || { echo "нужен docker" >&2; exit 1; }
@@ -65,3 +67,20 @@ echo "→ перечитываю конфиг Caddy…"
 docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
 echo "✓ Готово. Проверь https://${BASE_DOMAIN}:8444"
+
+# ── tinyproxy firewall: lock :8888 to trusted sources, persist across reboot ──
+# WHY: tinyproxy must never be publicly reachable (CVE-2023-49606 abuse notice).
+# The rules live in the kernel and vanish on reboot, so a oneshot systemd unit
+# re-applies them at boot. Idempotent: install unit only if changed, then apply.
+
+UNIT_SRC="${SCRIPT_DIR}/tinyproxy-firewall.service"
+UNIT_DST="/etc/systemd/system/tinyproxy-firewall.service"
+
+# Install/refresh the unit only when it differs (avoids needless daemon-reload)
+if ! cmp -s "$UNIT_SRC" "$UNIT_DST"; then
+  cp "$UNIT_SRC" "$UNIT_DST"
+  systemctl daemon-reload
+fi
+
+systemctl enable tinyproxy-firewall.service   # autostart on boot (no-op if already enabled)
+"${SCRIPT_DIR}/tinyproxy-firewall.sh"                 # apply the rules right now
