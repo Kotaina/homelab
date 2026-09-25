@@ -30,4 +30,19 @@ iptables -S INPUT \
   | grep -v -- "-j $CHAIN\$" \
   | sed 's/^-A /-D /' \
   | while read -r rule; do
-      # shellcheck disable=SC2086  #
+      iptables $rule   # word splitting intended: $rule holds the full rule spec
+    done || true
+
+# (Re)build the chain from scratch.
+iptables -N "$CHAIN" 2>/dev/null || true
+iptables -F "$CHAIN"
+for src in "${ALLOW[@]}"; do
+  iptables -A "$CHAIN" -s "$src" -j ACCEPT
+done
+# Everything else to the proxy port is dropped (last rule in the chain).
+iptables -A "$CHAIN" -j DROP
+
+# Single jump from INPUT, inserted at the top so nothing earlier can accept
+# proxy traffic first. Added only once.
+iptables -C INPUT -p tcp --dport "$TINYPROXY_PORT" -j "$CHAIN" 2>/dev/null \
+  || iptables -I INPUT 1 -p tcp --dport "$TINYPROXY_PORT" -j "$CHAIN"
