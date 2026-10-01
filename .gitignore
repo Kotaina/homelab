@@ -18,3 +18,4 @@ vps/Caddyfile
 *.swp
 .idea/
 .vscode/
+/dash/

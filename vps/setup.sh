@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────
 # Routing-слой VPS: Tailscale (на хосте) + Caddy (reverse proxy + TLS).
-# Идемпотентен. tinyproxy добавляется отдельно, после сверки с рабочим конфигом.
+# Идемпотентен. tinyproxy: конфиг из шаблона + firewall на его порт.
 # ─────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,8 +21,9 @@ set -a; source "${ENV_FILE}"; set +a
 : "${ACME_EMAIL:?задай в .env}"
 : "${NAS_TAILSCALE_IP:?задай в .env}"
 : "${TS_AUTHKEY:?задай в .env}"
-: "${NAS_PUBLIC_IP:?задай в .env}"
+: "${NAS_PUBLIC_CIDR:?задай в .env}"
 : "${TINYPROXY_PORT:?задай в .env}"
+: "${VPS_PUBLIC_IP:?задай в .env}"
 
 # --- Зависимости хоста ---
 command -v docker   >/dev/null || { echo "нужен docker" >&2; exit 1; }
@@ -66,7 +67,11 @@ ${COMPOSE} -f "${SCRIPT_DIR}/docker-compose.yml" up -d
 echo "→ перечитываю конфиг Caddy…"
 docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-echo "✓ Готово. Проверь https://${BASE_DOMAIN}:8444"
+# ── tinyproxy config: /etc/tinyproxy/tinyproxy.conf из шаблона + .env ──
+# WHY: конфиг раньше жил только на сервере. Теперь форма — в git (tinyproxy.conf.template),
+# значения (адреса) — в .env; NAS_PUBLIC_CIDR задаётся в одном месте для tinyproxy и firewall.
+# Идемпотентно: перезапускает tinyproxy, только если итоговый конфиг изменился.
+"${SCRIPT_DIR}/tinyproxy-config.sh"
 
 # ── tinyproxy firewall: lock :8888 to trusted sources, persist across reboot ──
 # WHY: tinyproxy must never be publicly reachable (CVE-2023-49606 abuse notice).
@@ -84,3 +89,5 @@ fi
 
 systemctl enable tinyproxy-firewall.service   # autostart on boot (no-op if already enabled)
 "${SCRIPT_DIR}/tinyproxy-firewall.sh"                 # apply the rules right now
+
+echo "✓ Готово. Проверь https://${BASE_DOMAIN}:8444"

@@ -1,0 +1,35 @@
+# tinyproxy — HTTP(S)-прокси на VPS для n8n с NAS.
+# ШАБЛОН: реальный /etc/tinyproxy/tinyproxy.conf собирает vps/tinyproxy-config.sh
+# из этого файла и vps/.env. Правь здесь, а не на сервере — иначе setup.sh перезатрёт.
+# Доступ к порту дополнительно режет firewall (vps/tinyproxy-firewall.sh).
+
+User tinyproxy
+Group tinyproxy
+
+Port ${TINYPROXY_PORT}
+# слушаем только публичный IPv4 VPS (без [::] — см. фазу 5 hardening)
+Listen ${VPS_PUBLIC_IP}
+Timeout 600
+
+DefaultErrorFile "/usr/share/tinyproxy/default.html"
+StatFile "/usr/share/tinyproxy/stats.html"
+LogFile "/var/log/tinyproxy/tinyproxy.log"
+LogLevel Info
+PidFile "/run/tinyproxy/tinyproxy.pid"
+
+MaxClients 100
+MinSpareServers 5
+MaxSpareServers 20
+StartServers 10
+MaxRequestsPerChild 0
+
+# кто может пользоваться прокси (те же значения, что и в firewall)
+Allow 127.0.0.1
+Allow ${NAS_TAILSCALE_IP}
+Allow ${NAS_PUBLIC_CIDR}
+
+ViaProxyName "tinyproxy"
+
+# CONNECT (HTTPS-туннели) только на эти порты
+ConnectPort 443
+ConnectPort 563
