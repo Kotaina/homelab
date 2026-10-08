@@ -1,4 +1,5 @@
 vps/.env
+mac/.env
 *.key
 *.pem
 *_key
